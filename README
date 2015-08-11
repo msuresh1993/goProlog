@@ -1,7 +1,9 @@
 CSE 505 : Computing With Logic 
-HW 4: Aggregation and Tabled Evaluation
 ----------------------------------------
-
+This project aims to add a directive to the XSB prolog sytem that offers higher level of abstraction and more flexibility to aggregation operations compared to the low level operations available now. 
+It makes the job of the programmer much easier. 
+Example: writing a dynamic program becomes as simple as writing the recursive definition.
+To see a sample program, look at any of the .pd extension files. 
 HOW TO RUN
 -----------
 [go].
