@@ -1,0 +1,11 @@
+:-table1(lcs(+,+,max,-)).
+
+lcs([],[],0,[]).
+lcs([],_,0,[]). 
+lcs(_,[],0,[]).
+
+lcs([X|Xs],[Y|Ys],Len,[X|Seq]) :-	X=Y, lcs(Xs,Ys,L,Seq), Len is L+1.
+
+lcs([X|Xs],[Y|Ys],Len,Seq) :-	X\=Y, lcs([X|Xs],Ys,Len,Seq).
+
+lcs([X|Xs],[Y|Ys],Len,Seq) :-	X\=Y, lcs(Xs,[Y|Ys],Len,Seq).

@@ -1,0 +1,22 @@
+:-table1(editdist(+,+,min,-)).
+
+editdist([],[],0,[]).
+
+%first row - penalty=1 for a gap in Y (indel)
+editdist([X|Xs],[],D) :-editdist(Xs,[],E), D is E+1.
+
+%first column - penalty=1 for a gap in X (indel)
+editdist([],[Y|Ys],D) :-editdist([],Ys,E), D is E+1.
+
+%Match/Mismatch
+editdist([X|Xs],[Y|Ys],D,E) :-	editdist(Xs,Ys,M,Es),
+								(=(X,Y) -> 
+								D is M, lists:append([X],Es,E)
+								;
+								D is M+1, lists:append(['-'],Es,E)).
+
+%Insertion
+editdist([X|Xs],[Y|Ys],D,["I"|Es]) :-	editdist(Xs,[Y|Ys],INS,Es), D is INS+1.
+
+%Deletion
+editdist([X|Xs],[Y|Ys],D,["D"|Es]) :-	editdist([X|Xs],Ys,DEL,Es), D is DEL+1.

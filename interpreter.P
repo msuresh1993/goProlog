@@ -1,0 +1,124 @@
+:-  op(500, xfy, table1). 
+
+browse(InputFileName):-	consult(helper), 
+						string:concat_atom([InputFileName|'.pd'],InputFile), 
+						open(InputFile,read,InputStr), 
+						string:concat_atom([InputFileName|'_build.P'],OutputFile), 
+						open(OutputFile,write,OutputStr),
+						set_stream_position(InputStr,0),
+						set_input(InputStr),
+						set_output(OutputStr),
+						get_line,
+						close(InputStr),
+						close(OutputStr),
+						compile_and_load(OutputFile). 
+
+get_line:-at_end_of_stream.
+
+get_line:-	\+ at_end_of_stream,
+			read_term(Line,[]),process1(Line),
+			get_line.
+
+
+compile_and_load(OutputFileName):-	compile(OutputFileName),
+									consult(OutputFileName).
+
+%----------------------------processing directives and non directives.------------------------------------------ 
+process1(Line):-process_nondirective(Line).     
+process1(Line):-Line=':-'(D),'=..'(D,[L|Ls]),L='table1'->!,   
+				setup_options(Ls),process_directive(D);write_term(Line,[]),put_code(46),nl,flush_output.
+
+
+
+%--------------------processing the modified tabling directive and storing the options in an asserted fact------
+
+
+process_directive(D):- 	arg(1,(D),L),
+						functor(L,Pred,Arity),Temp=':-table ',
+						modifyname_general(['temp',Pred,Arity,'/',Arity],Tabled),
+						string:concat_atom([Temp|Tabled],Res),
+						write_term((Res),[]),put_code(46),nl,flush_output,
+						generate_driver(Pred,Arity),
+						generate_driver2(Pred,Arity),
+						generate_driver3(Pred,Arity).
+
+setup_options([L|_]):-	'=..'(L,[Predname|PredAttributes]),basics:length(PredAttributes,Arity),
+						assert(memoizedtables(Predname,PredAttributes,Arity)).
+
+%----------------------------------------------------------------------------------------------------------------
+
+process_nondirective(D):-	D=':-'(H,T),!,functor(H,Pred,Arity),memoizedtables(Pred,_,Arity),    
+							modifyname(H,Output,Arity),NewClause=':-'(Output,T),
+							write_term((NewClause),[]),put_code(46),nl,flush_output.
+
+modifyname(Input,Output,Arity):-'=..'(Input,Intermediate),Intermediate=[H|Hs],
+								string:concat_atom([H|Arity],Inter),'=..'(Output,[Inter|Hs]).
+
+%---------------------------careful, this part is so fragile, it might break the universe.Just kidding. but no seriously, puppies might die----
+
+generate_driver(P,A):-	get_all(P,Arglist,Arglisttype),
+						get_fixed_driver(Arglist,Arglisttype,FixedArgs,Aggfunction),
+						aggregate_driver(P,A,Arglist,FixedArgs,Arglisttype,Aggfunction).
+
+get_all(Pred,ArgumentList,Arglisttype):-	memoizedtables(Pred,Arglisttype,Arity),
+											file_op:mpa_to_skel(Pred/Arity,Skel),
+											'=..'(Skel,[_|ArgumentList]).
+
+get_fixed_driver(_,[Y|_],[],Aggfunction):-	Y\='+',!,Aggfunction=Y.
+get_fixed_driver([X|Arglist],['+'|Arglisttype],[X|Fixedargs],Aggfunction):-	get_fixed_driver(Arglist,Arglisttype,Fixedargs,Aggfunction).
+
+
+aggregate_driver(Pred,Arity,Arglist,Fixedargs,Arglisttype,Aggfunction):-modifyname_general(['temp',Pred,Arity],Tempname),'=..'(Temp,[Tempname|Arglist]),
+															lists:length(Arglist,Len1),lists:length(Fixedargs,Len2),Len_nonfixed is Len1-Len2,
+															generate_var(Len_nonfixed,L),append1(Fixedargs,L,Newlist),
+															string:concat_atom([Pred|Arity],Inter),'=..'(Callprog,[Inter|Newlist]),
+															Bagoflists=['bagof',L,Callprog,Reslist],Getfirstlist=['getfirst',Reslist,Outputlist],
+															'=..'(Bagof,Bagoflists),'=..'(Getfirst,Getfirstlist),
+															get_last(Arglist,Arglisttype,Fix),append1([Aggfunction,Outputlist],[Ans],Functionappend),
+															flatten(Functionappend,Flattenedfunction),
+															'=..'(Functioncall,Flattenedfunction),Mapanslist=['mapans',Fix,Reslist,Ans],
+															'=..'(Mapans,Mapanslist),
+												            Agg_driver=':-'(Temp,','(Bagof,','(Getfirst,','(Functioncall,Mapans)))),write_term((Agg_driver),[]),
+												            put_code(46),nl,flush_output.
+
+append1([X|Xs],Y,[X|Ls]):-var(X),!,append1(Xs,Y,Ls).
+append1([],Y,Y).
+append1([X|Xs],Y,[X|Ls]):-append1(Xs,Y,Ls).
+get_last([L|Ls],[F|Fs],A):-F='+'->get_last(Ls,Fs,A);A=[L|Ls].
+generate_var(0,[]):-!. 
+generate_var(Len,[_|Ls]):-Len1 is Len-1,generate_var(Len1,Ls).
+
+%----------------------------------------------------------------------------------------------------------------
+
+%shortest(X,Y,Z):-tables:get_returns_for_call(temp(X,Y,Z),temp(X,Y,Z)),!.
+generate_driver2(P,A) :-get_all(P,Arglist,_), 
+						aggregate_driver2(P,A,Arglist).
+
+aggregate_driver2(Pred,Arity,Arglist):-	'=..'(PredArg,[Pred|Arglist]),
+										modifyname_general(['temp',Pred,Arity],Tempname),
+										'=..'(Temp,[Tempname|Arglist]),
+										'=..'(TableGetReturn,['tables:get_returns_for_call',Temp,Temp]),
+										Agg_driver=':-'(PredArg,','(TableGetReturn,'!')),
+										write_term((Agg_driver),[]),put_code(46),nl,flush_output.
+
+%----------------------------------------------------------------------------------------------------------------
+
+%shortest(X,Y,Z):-temp(X,Y,Z).
+generate_driver3(P,A) :-get_all(P,Arglist,_), 
+						aggregate_driver3(P,A,Arglist).
+
+aggregate_driver3(Pred,Arity,Arglist):-	'=..'(PredArg,[Pred|Arglist]),
+										modifyname_general(['temp',Pred,Arity],Tempname),
+										'=..'(Temp,[Tempname|Arglist]), 
+										Agg_driver=':-'(PredArg,Temp),		
+										write_term((Agg_driver),[]),put_code(46),nl,flush_output.
+
+%----------------------------------------------------------------------------------------------------------------
+
+flatten(L,A):-flatten_proc(L,A-[]).
+flatten_proc(L,[L|Ops]-Ops):-var(L),!.
+flatten_proc([],Ops-Ops).
+flatten_proc([L|Ls],Ops-Ope):-!,flatten_proc(L,Ops-Opt),flatten_proc(Ls,Opt-Ope).
+flatten_proc(L,[L|Ops]-Ops).
+
+modifyname_general(Input,Output):-string:concat_atom(Input,Output).

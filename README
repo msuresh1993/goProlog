@@ -1,0 +1,51 @@
+CSE 505 : Computing With Logic 
+HW 4: Aggregation and Tabled Evaluation
+----------------------------------------
+
+HOW TO RUN
+-----------
+[go].
+go(filename). 	%filename is the .pd file contatining the DP written by the user
+				%currently available: shortestpath, lcs, editdist
+
+Examples:
+[go].
+
+go(shortestpath).
+shortestpath(1,2,Q,W).
+
+go(editdist).
+editdist(['b','b','c','d','e'],['b','c','d','e','e'],D,E).
+
+go(lcs).
+lcs(['a','b','c','d'],['a','b','d','e'],L,S).
+
+
+CONTENTS
+--------
+
+1. Begin:
+	go.P
+	% Compiles and loads interpreter.P and the program 'filename' when you run go(filename).
+
+2. Translator:
+	interpreter.P
+	% Generates a .P file understandable by XSB from the the .pd file written by the user
+	% Example -It generates shortestpath_build.P from shortestpath.pd 
+
+3. Helper file:
+	helper.P 
+	% Contains a few helper predicates required by the interpreter and the user program
+
+4. Example Dynamic Programing Problems - written at a higher level of abstraction by the user:
+	Shortest Path: 				shortestpath.pd 
+	Longest Common Subsequence: lcs.pd
+	Edit Distance: 				editdist.pd
+    
+5. README  
+
+6. Generated .P files
+	**These files will not be generated until you run go(filename)**
+	shortestpath_build.P
+	lcs_build.P
+	editdist_build.P

@@ -1,0 +1,10 @@
+ :-table tempeditdist4/4.
+ tempeditdist4( _h741, _h742, _h743, _h744) :- bagof([ _h856, _h858], editdist4( _h741, _h742, _h856, _h858), _h920), getfirst( _h920, _h928), min( _h928, _h947), mapans([ _h743, _h744], _h920, _h947).
+ editdist( _h1054, _h1055, _h1056, _h1057) :- tables:get_returns_for_call( tempeditdist4( _h1054, _h1055, _h1056, _h1057), tempeditdist4( _h1054, _h1055, _h1056, _h1057)), !.
+ editdist( _h1233, _h1234, _h1235, _h1236) :- tempeditdist4( _h1233, _h1234, _h1235, _h1236).
+ editdist( [], [], 0, []).
+ editdist([ _h1533|_h1551], [], _h1593) :- editdist( _h1551, [], _h1663), _h1593 is _h1663 + 1.
+ editdist( [],[ _h1872|_h1890], _h1914) :- editdist( [], _h1890, _h1984), _h1914 is _h1984 + 1.
+ editdist4([ _h2175|_h2193],[ _h2223|_h2241], _h2265, _h2283) :- editdist( _h2193, _h2241, _h2351, _h2369),( _h2175 = _h2223 -> _h2265 is _h2351, lists : append([ _h2175], _h2369, _h2283) ; _h2265 is _h2351 + 1, lists : append([ -], _h2369, _h2283)).
+ editdist4([ _h3031|_h3049],[ _h3079|_h3097], _h3121,["I"|_h3157]) :- editdist( _h3049,[ _h3079|_h3097], _h3259, _h3157), _h3121 is _h3259 + 1.
+ editdist4([ _h3569|_h3587],[ _h3617|_h3635], _h3659,["D"|_h3695]) :- editdist([ _h3569|_h3587], _h3635, _h3797, _h3695), _h3659 is _h3797 + 1.
